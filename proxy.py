@@ -26,6 +26,8 @@ def proxy(path):
     response = requests.get(url, params=params, headers={
         'Authorization': USERFEEDS_API_KEY
     })
-    print(response)
-    data = response.json()
-    return jsonify(data)
+
+    if response.ok:
+        data = response.json()
+        return jsonify(data)
+    return 'Not Found', 404

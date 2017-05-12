@@ -1,28 +1,69 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Simple ranking for Ethereum:</title>
+    <title>Simple ranking for Ethereum:</title>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/lodash/4.17.4/lodash.min.js"></script>
+    <style type="text/css">
+        h2 {
+          font: 400 40px/1.5 Helvetica, Verdana, sans-serif;
+          margin: 0;
+          padding: 0;
+        }
+
+        ul {
+          list-style-type: none;
+          margin: 0;
+          padding: 0;
+        }
+
+        li {
+          font: 200 15px/1.5 Helvetica, Verdana, sans-serif;
+          border-bottom: 1px solid #ccc;
+        }
+
+        li:last-child {
+          border: none;
+        }
+
+        li a {
+          text-decoration: none;
+          color: #000;
+          transition: font-size 0.3s ease, background-color 0.3s ease;
+          display: block;
+        }
+
+        li a:hover {
+          font-size: 20px;
+          background: #f6f6f6;
+        }
+
+        li span {
+          font-size: 14px;
+          color: #ddd;   
+        }
+  </style>
 </head>
 <body>
+  <h2>Simple ranking for Userfeeds Team</h2>
+  <div id="ranking"></div>
   <script>
-    const apiKey = 'API_KEY';
+    var template = `<ul>
+        <% _.forEach(items, function(item) { %>
+            <li>
+                <a href="<%- item.value %>"><%- item.value %></a>
+                <span><%- item.score %></span>
+            </li>
+        <% }); %>
+    </ul>`;
+    var render = _.template(template);
+    var div = document.getElementById('ranking');
 
-    fetch('/api/ranking/ethereum/simple', {
-      headers: {'Authorization': apiKey}
-    }).then(function(response) {
-      return response.json();
-    }).then(function(ranking) {
-      var div = document.getElementById('ranking');
-
-      for (var i = ranking.items.length - 1; i >= 0; i--) {
-        var item = ranking.items[i];
-        div.innerHTML += i.toString() + '.<a href="' + item.value + '">' + item.value + '</a><br/>';
-        div.innerHTML += 'Score: ' + item.score + '<br/><br/>';
-      }
+    fetch('/api/ranking/rinkeby:0x4c51c2570ee927020bf75dbec863dd8dc3786698/simple')
+    .then(function(response) { return response.json(); })
+    .then(function(ranking) {
+        div.innerHTML = render({items: ranking.items});
     });
   </script>
-  <h1>Simple ranking for Ethereum</h1>
-  <div id="ranking"></div>
 </body>
 </html>
 
