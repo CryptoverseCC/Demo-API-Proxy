@@ -2,7 +2,8 @@
 <html>
 <head>
     <title>Simple ranking for Ethereum:</title>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/lodash/4.17.4/lodash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.4/lodash.min.js" integrity="sha256-8E6QUcFg1KTnpEU8TFGhpTGHw5fJqB9vCms3OhAYLqw=" crossorigin="anonymous"></script>
+    <script src="https://kjur.github.io/jsrsasign/jsrsasign-all-min.js"></script>
     <style type="text/css">
         h2 {
           font: 400 40px/1.5 Helvetica, Verdana, sans-serif;
@@ -45,6 +46,7 @@
 </head>
 <body>
   <h2>Simple ranking for Userfeeds Team</h2>
+  <input id="share" type="text"/> <button onclick="share(this)">Share</button> <button onclick="pair(this)">Pair</button>
   <div id="ranking"></div>
   <script>
     var template = `<ul>
@@ -58,11 +60,137 @@
     var render = _.template(template);
     var div = document.getElementById('ranking');
 
-    fetch('/api/ranking/rinkeby:0x4c51c2570ee927020bf75dbec863dd8dc3786698/simple')
-    .then(function(response) { return response.json(); })
-    .then(function(ranking) {
-        div.innerHTML = render({items: ranking.items});
-    });
+    var Contracts = {
+      1: "TODO",
+      3: "0xca14f04461bf292932d03f6646f5aa1f6c681fe1",
+      4: "0x0f74f31f19c9f6b217965563a456607e7eb4b213",
+      abi: [
+        {
+          constant: false,
+          inputs: [
+            {
+              name: "data",
+              type: "string"
+            }
+          ],
+          name: "save",
+          outputs: [],
+          payable: false,
+          type: "function"
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: false,
+              name: "sender",
+              type: "address"
+            },
+            {
+              indexed: false,
+              name: "data",
+              type: "string"
+            }
+          ],
+          name: "Claim",
+          type: "event"
+        }
+      ]
+    }
+
+    function init() {
+        let publicKey = localStorage.getItem("public");
+        let privateKey = localStorage.getItem("private");
+        
+        if (!(publicKey && privateKey)) {
+          var ec = new KJUR.crypto.ECDSA({"curve": "secp256r1"});
+          var keypair = ec.generateKeyPairHex();
+
+          localStorage.setItem("public", keypair.ecpubhex);
+          localStorage.setItem("private", keypair.ecprvhex);
+        }
+
+        fetch('/api/ranking/rinkeby:0x4c51c2570ee927020bf75dbec863dd8dc3786698/simple')
+        .then(function(response) { return response.json(); })
+        .then(function(ranking) {
+            div.innerHTML = render({items: ranking.items});
+        });
+    }
+
+    function share(event) {
+        var value = document.getElementById('share').value;
+
+        let claim = {
+          "context": "rinkeby:0x4c51c2570ee927020bf75dbec863dd8dc3786698",
+          "type": ["Claim"],
+          "claim": {
+            "target": value
+          },
+          "credits": [
+            {
+              "type": "interface",
+              "value": window.location.href
+            }
+          ]
+        };
+        
+        let privateKey = localStorage.getItem("private");
+        let publicKey = localStorage.getItem("public");
+
+        // generate Signature object
+        let sig = new KJUR.crypto.Signature({"alg": "SHA256withECDSA"});
+        // set private key for sign
+        sig.initSign({'ecprvhex': privateKey, 'eccurvename': "secp256r1"});
+        // update data
+        sig.updateString(JSON.stringify(claim));
+        // calclate signature
+        let signature = sig.sign();
+
+        claim.signature = {
+            type: "SHA256withECDSA.secp256r1",
+            creator: publicKey,
+            signatureValue: signature
+        };
+
+        fetch(`/api/storage/`, {
+            method: "POST",
+            body: JSON.stringify(claim)
+        })
+        .then(response => response.json())
+        .catch(() => ("ERROR"))
+        .then(result => {
+            alert('Done!');
+        });
+    }
+
+    function pair () {
+        contractAddress = Contracts[web3.version.network];
+
+        let ClaimsContract = web3.eth.contract(Contracts.abi).at(contractAddress.address);
+
+        let claim = {
+          context: "userfeeds:pairing",
+          type: ["Claim"],
+          claim: {
+            target: localStorage.getItem("public")
+          },
+          credits: [
+            {
+              type: "interface",
+              value: window.location.href
+            }
+          ]
+        }
+
+        ClaimsContract.save(JSON.stringify(claim), {from: web3.eth.coinbase}, (err) => {
+          if (err) {
+            throw Error(err);
+          }
+          alert("You are now paired!");
+        });
+    } 
+
+    init();
   </script>
 </body>
 </html>

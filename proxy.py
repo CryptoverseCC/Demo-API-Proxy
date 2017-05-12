@@ -1,4 +1,5 @@
 import os
+import logging
 import requests
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
@@ -15,7 +16,7 @@ cors = CORS(app, resources={r'*': {'origins': DOMAINS}})
 
 
 @app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
+@app.route('/<path:path>', methods=['GET', 'POST'])
 def proxy(path):
     if path == '':
         return render_template('home.html')
@@ -23,11 +24,18 @@ def proxy(path):
     url = '{base}/{path}'.format(base=USERFEEDS_API_URL, path=path)
     params = dict(request.args.items())
 
-    response = requests.get(url, params=params, headers={
-        'Authorization': USERFEEDS_API_KEY
-    })
+    if request.method == 'POST':
+        response = requests.post(url, data=request.data, headers={
+            'Authorization': USERFEEDS_API_KEY,
+            'Content-Type': 'application/json'
+        })
+    else:
+        response = requests.get(url, params=params, headers={
+            'Authorization': USERFEEDS_API_KEY
+        })
 
     if response.ok:
         data = response.json()
         return jsonify(data)
+
     return 'Not Found', 404
