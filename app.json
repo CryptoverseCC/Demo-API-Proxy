@@ -1,0 +1,8 @@
+{
+  "name": "Userfeeds API Proxy",
+  "description": "Userfeeds API Proxy app, which can easily be deployed to Heroku.",
+  "image": "heroku/python",
+  "repository": "https://github.com/Userfeeds/Simple-API-Proxy",
+  "keywords": ["python", "flask", "userfeeds" ],
+  "addons": []
+}

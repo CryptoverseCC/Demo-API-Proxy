@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Simple ranking for Ethereum:</title>
+</head>
+<body>
+  <script>
+    const apiKey = 'API_KEY';
+
+    fetch('/api/ranking/ethereum/simple', {
+      headers: {'Authorization': apiKey}
+    }).then(function(response) {
+      return response.json();
+    }).then(function(ranking) {
+      var div = document.getElementById('ranking');
+
+      for (var i = ranking.items.length - 1; i >= 0; i--) {
+        var item = ranking.items[i];
+        div.innerHTML += i.toString() + '.<a href="' + item.value + '">' + item.value + '</a><br/>';
+        div.innerHTML += 'Score: ' + item.score + '<br/><br/>';
+      }
+    });
+  </script>
+  <h1>Simple ranking for Ethereum</h1>
+  <div id="ranking"></div>
+</body>
+</html>
+
+
